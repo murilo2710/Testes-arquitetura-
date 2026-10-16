@@ -1,0 +1,49 @@
+ktor:
+  deployment:
+    port: 8080
+  application:
+    modules:
+      - com.deviante.HttpKt.configureHttp
+      - com.deviante.SerializationKt.configureSerialization
+      - com.deviante.DatabaseKt.configureDatabase
+      - com.deviante.RoutingKt.configureRouting
+
+database:
+  jdbcUrl: ${DATABASE_JDBC_URL:jdbc:postgresql://localhost:5432/postgres?sslmode=require}
+  user: ${DATABASE_USER:postgres}
+  password: ${DATABASE_PASSWORD:}
+
+supabase:
+  url: ${SUPABASE_URL:}
+  anonKey: ${SUPABASE_ANON_KEY:}
+
+# Python/FastAPI process-mining service (deviante/api/mining) — stateless compute
+# for XES/CSV parsing (UC4). Not reachable from the browser; only this API
+# calls it. See gestalt-kit/docs/architecture.md § Process mining exception.
+mining:
+  url: ${MINING_SERVICE_URL:http://localhost:8000}
+
+# Variabilidade da linha de produto (Reuso 03): qual variante cada cliente
+# recebe. Planos e funcionalidades estão em variability/ProductLine.kt.
+productLine:
+  # Empresa de quem entra pelo Google; as demais são as do login demo.
+  # A empresa de cada usuário e a dona de cada registro ficam no banco
+  # (deviante.businesses e business_id); aqui fica o que cada uma contratou.
+  defaultClient: "Deviante"
+  defaultPlan: manutencao
+  clients:
+    - name: "Deviante"
+      plan: manutencao
+      exclusive: [schedule-export]
+    - name: "Alfa"
+      plan: manutencao
+      exclusive: [schedule-export]
+    - name: "Beta"
+      plan: essencial
+      exclusive: []
+    - name: "Gama"
+      plan: manutencao
+      exclusive: []
+    - name: "Delta"
+      plan: essencial
+      exclusive: []

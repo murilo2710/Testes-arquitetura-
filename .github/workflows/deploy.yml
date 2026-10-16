@@ -1,0 +1,77 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: deploy-group
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Ensure app exists
+        run: flyctl apps create deviante-api --org personal || true
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # Só envia ao Fly os valores preenchidos: um secret vazio no GitHub não
+      # pode apagar o que já está configurado no app. URL do banco, usuário e
+      # URL do Supabase não são sigilosos (estão no .env.example) e têm padrão.
+      - name: Set secrets
+        run: |
+          args=()
+          for pair in \
+            "DATABASE_JDBC_URL=$DATABASE_JDBC_URL" \
+            "DATABASE_USER=$DATABASE_USER" \
+            "DATABASE_PASSWORD=$DATABASE_PASSWORD" \
+            "SUPABASE_URL=$SUPABASE_URL" \
+            "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" \
+            "MINING_SERVICE_URL=$MINING_SERVICE_URL"; do
+            if [ -n "${pair#*=}" ]; then args+=("$pair"); fi
+          done
+          flyctl secrets set "${args[@]}" --app deviante-api --stage
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          DATABASE_JDBC_URL: ${{ secrets.DATABASE_JDBC_URL || 'jdbc:postgresql://aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require' }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER || 'postgres.ydjtrcjxhtmygytmebrk' }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ydjtrcjxhtmygytmebrk.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          MINING_SERVICE_URL: ${{ secrets.MINING_SERVICE_URL }}
+
+      - name: Deploy
+        run: flyctl deploy --remote-only --app deviante-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # O serviço de mineração (Python) é outro app no Fly.io. Só é reimplantado
+  # quando um push altera mining/, porque a imagem com pm4py é pesada.
+  deploy-mining:
+    runs-on: ubuntu-latest
+    concurrency: deploy-mining-group
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for mining changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || ! git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            echo "mining=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- mining/; then
+            echo "mining=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "mining=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: steps.changes.outputs.mining == 'true'
+      - name: Deploy mining
+        if: steps.changes.outputs.mining == 'true'
+        working-directory: mining
+        run: flyctl deploy --remote-only --app deviante-mining
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

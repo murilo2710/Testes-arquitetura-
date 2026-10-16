@@ -1,0 +1,30 @@
+# Gradle
+.gradle/
+build/
+*.class
+
+# Kotlin
+.kotlin/
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+.env
+.env.*
+!.env.example
+
+# Local dev server logs
+_dev-server.*.log
+.ktor.*.log
+
+# Eclipse/IntelliJ compiled output
+bin/
+
+# Vendored pm4py research library (belongs to the mining service, not the API)
+pm4py-release/

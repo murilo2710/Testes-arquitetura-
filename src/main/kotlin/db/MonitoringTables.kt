@@ -1,0 +1,122 @@
+package com.deviante.db
+
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.javatime.timestampWithTimeZone
+
+object MonitoringsTable : Table(name = "monitorings") {
+    override val tableName = "deviante.monitorings"
+    val id = uuid("id")
+    val managerId = uuid("manager_id").references(ManagersTable.id)
+    val businessId = uuid("business_id").references(BusinessesTable.id)
+    val name = varchar("name", 150)
+    val description = text("description")
+    val sourceType = varchar("source_type", 30)
+    val sourceName = varchar("source_name", 255).nullable()
+    val status = varchar("status", 30)
+    val createdAt = timestampWithTimeZone("created_at")
+    val updatedAt = timestampWithTimeZone("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object ProcessEquipmentTable : Table(name = "process_equipment") {
+    override val tableName = "deviante.process_equipment"
+    val processId = uuid("process_id").references(ProcessesTable.id)
+    val equipmentId = uuid("equipment_id").references(EquipmentTable.id)
+    val createdAt = timestampWithTimeZone("created_at")
+    override val primaryKey = PrimaryKey(processId, equipmentId)
+}
+
+object MonitoringEquipmentTable : Table(name = "monitoring_equipment") {
+    override val tableName = "deviante.monitoring_equipment"
+    val monitoringId = uuid("monitoring_id").references(MonitoringsTable.id)
+    val equipmentId = uuid("equipment_id").references(EquipmentTable.id)
+    val createdAt = timestampWithTimeZone("created_at")
+    override val primaryKey = PrimaryKey(monitoringId, equipmentId)
+}
+
+object MonitoringParametersTable : Table(name = "monitoring_parameters") {
+    override val tableName = "deviante.monitoring_parameters"
+    val id = uuid("id")
+    val monitoringId = uuid("monitoring_id").references(MonitoringsTable.id)
+    val equipmentId = uuid("equipment_id").references(EquipmentTable.id)
+    val name = varchar("name", 150)
+    val unit = varchar("unit", 50)
+    val description = text("description")
+    val createdAt = timestampWithTimeZone("created_at")
+    val updatedAt = timestampWithTimeZone("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object MonitoringReadingsTable : Table(name = "monitoring_readings") {
+    override val tableName = "deviante.monitoring_readings"
+    val id = uuid("id")
+    val parameterId = uuid("parameter_id").references(MonitoringParametersTable.id)
+    val observedAt = timestampWithTimeZone("observed_at")
+    val value = double("value")
+    val quality = varchar("quality", 30)
+    val createdAt = timestampWithTimeZone("created_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object MonitoringAnalysesTable : Table(name = "monitoring_analyses") {
+    override val tableName = "deviante.monitoring_analyses"
+    val id = uuid("id")
+    val monitoringId = uuid("monitoring_id").references(MonitoringsTable.id)
+    val name = varchar("name", 200)
+    val description = text("description")
+    val status = varchar("status", 30)
+    val createdAt = timestampWithTimeZone("created_at")
+    val updatedAt = timestampWithTimeZone("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object MonitoringAnalysisMachinesTable : Table(name = "monitoring_analysis_machines") {
+    override val tableName = "deviante.monitoring_analysis_machines"
+    val monitoringAnalysisId = uuid("monitoring_analysis_id").references(MonitoringAnalysesTable.id)
+    val equipmentId = uuid("equipment_id").references(EquipmentTable.id)
+    val createdAt = timestampWithTimeZone("created_at")
+    override val primaryKey = PrimaryKey(monitoringAnalysisId, equipmentId)
+}
+
+object EquipmentAnalysisRunsTable : Table(name = "equipment_analysis_runs") {
+    override val tableName = "deviante.equipment_analysis_runs"
+    val id = uuid("id")
+    val equipmentId = uuid("equipment_id").references(EquipmentTable.id)
+    val monitoringId = uuid("monitoring_id").references(MonitoringsTable.id)
+    val parameterId = uuid("parameter_id").references(MonitoringParametersTable.id)
+    val monitoringAnalysisId = uuid("monitoring_analysis_id").references(MonitoringAnalysesTable.id).nullable()
+    val method = varchar("method", 50)
+    val delta = double("delta")
+    val treatment = varchar("treatment", 20)
+    val observationCount = integer("observation_count")
+    val inputSha256 = char("input_sha256", 64)
+    val resultJson = text("result_json")
+    val provenanceJson = text("provenance_json")
+    val rulValue = double("rul_value").nullable()
+    val rulUnit = varchar("rul_unit", 20)
+    val failureProbability = double("failure_probability").nullable()
+    val failureHorizonValue = double("failure_horizon_value").nullable()
+    val failureHorizonUnit = varchar("failure_horizon_unit", 20).nullable()
+    val modelVersion = varchar("model_version", 100).nullable()
+    val recommendationText = text("recommendation_text").nullable()
+    val createdAt = timestampWithTimeZone("created_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object MaintenanceRecommendationsTable : Table(name = "maintenance_recommendations") {
+    override val tableName = "deviante.maintenance_recommendations"
+    val id = uuid("id")
+    val equipmentId = uuid("equipment_id").references(EquipmentTable.id)
+    val analysisRunId = uuid("analysis_run_id").references(EquipmentAnalysisRunsTable.id).nullable()
+    val managerId = uuid("manager_id").references(ManagersTable.id)
+    val action = text("action")
+    val rationale = text("rationale")
+    val priority = varchar("priority", 20)
+    val status = varchar("status", 30)
+    val recommendedStart = timestampWithTimeZone("recommended_start").nullable()
+    val recommendedEnd = timestampWithTimeZone("recommended_end").nullable()
+    val createdAt = timestampWithTimeZone("created_at")
+    val updatedAt = timestampWithTimeZone("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
