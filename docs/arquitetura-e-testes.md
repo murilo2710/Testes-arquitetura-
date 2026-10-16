@@ -50,8 +50,12 @@ As duas falhas são `test_bundled_luiz_corpus_is_used_when_training_runs_are_omi
 - [Dependências de teste Python](https://github.com/murilo2710/Testes-arquitetura-/blob/main/mining/requirements-dev.txt)
 - [README de arquitetura e comandos](https://github.com/murilo2710/Testes-arquitetura-/blob/main/README.md)
 
-Os links apontam para a branch `main` do repositório de entrega. A publicação precisa ser confirmada pelo commit remoto antes de usar estes links como evidência final.
+Os links apontam para a branch `main` do repositório de entrega.
 
-## Captura de tela
+## Capturas dos relatórios
 
-Este documento traz a transcrição fiel dos resultados produzidos pelos comandos. Para cumprir literalmente a exigência de print screen do terminal, abra um terminal na raiz do projeto, execute os comandos acima e capture a janela com `Win + Shift + S`; não use uma imagem recriada como se fosse captura do terminal.
+As imagens abaixo foram capturadas dos relatórios HTML oficiais produzidos durante a execução:
+
+- `docs/evidencias/gradle-test-report.png`: relatório Gradle, 28 testes e zero falhas.
+- `docs/evidencias/python-architecture-test-report.png`: relatório `pytest-html`, dois testes PyTestArch aprovados.
+- `docs/evidencias/python-architecture-test-report.html`: relatório HTML completo de PyTestArch.
